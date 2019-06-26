@@ -46,10 +46,7 @@ namespace OnTheBeachCodeTest
                     result.RemoveAt(dependsOnIndex);
                     var nameIndex = result.IndexOf(job.Name);
 
-                    if (nameIndex == 0)
-                        result.Insert(0, job.DependsOn);
-                    else
-                        result.Insert(nameIndex - 1, job.DependsOn);
+                    result.Insert(nameIndex, job.DependsOn);
                 }
             }
 
