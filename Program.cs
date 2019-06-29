@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -26,7 +26,7 @@ namespace OnTheBeachCodeTest
             var jobs = new List<Job>();
             foreach (var jobString in jobsStrings)
             {
-                var job = jobString.Split("=>", StringSplitOptions.RemoveEmptyEntries);
+                var job = jobString.Trim().Split("=>", StringSplitOptions.RemoveEmptyEntries);
                 if(job.Length==1)
                     jobs.Add(new Job(job[0].Trim(), null));
                 else
@@ -34,19 +34,28 @@ namespace OnTheBeachCodeTest
             }
             
 
-            List<string> result = jobs.Select(job => job.Name).ToList();
-
+            var result = jobs.Select(job => job.Name).ToList();
+            var dependancy = new Dictionary<string, List<string>>();
             foreach (var job in jobs)
             {
                 if (job.Name == job.DependsOn)
                     throw new Exception("Jobs can’t depend on themselves");
                 if (job.DependsOn != null)
                 {
+                    if(dependancy.ContainsKey(job.DependsOn))
+                        dependancy[job.DependsOn].Add(job.Name);
+                    else
+                        dependancy.Add(job.DependsOn, new List<string>() {job.Name });
+
                     var dependsOnIndex = result.IndexOf(job.DependsOn);
                     result.RemoveAt(dependsOnIndex);
-                    var nameIndex = result.IndexOf(job.Name);
 
-                    result.Insert(nameIndex, job.DependsOn);
+                    var dependancyList = dependancy[job.DependsOn];
+
+                    //Get the lowest index in case multiple jobs depends on the same job
+                    var insertIndex= dependancyList.Min(x => result.IndexOf(x));
+
+                    result.Insert(insertIndex, job.DependsOn);
                 }
             }
 
@@ -80,9 +89,19 @@ namespace OnTheBeachCodeTest
             result = TestJobs("a =>, b => c, c => f, d => a, e => b, f =>");
             Console.WriteLine(result);
 
+            result = TestJobs("a =>, b => f, c => e, d => c, e => a, f =>");
+            Console.WriteLine(result);
+
+            result = TestJobs("a =>f, b =>, c =>e, d => a, e =>, f =>b,g=>c");
+            Console.WriteLine(result);
+
+            //Multiple job depends on the same job
+            result = TestJobs("a =>e, b =>e, c =>e, d => , e =>");
+            Console.WriteLine(result);
+
             try
             {
-                result = TestJobs("a =>,b =>,c => c");
+                result = TestJobs("a =>,b =>,c =>c");
             }
             catch (Exception e)
             {
@@ -92,7 +111,7 @@ namespace OnTheBeachCodeTest
 
             try
             {
-                result = TestJobs("a =>,b => c,c => f,d => a,e =>,f => b");
+                 result = TestJobs("a =>,b => c,c => b,d => e,e =>b");
             }
             catch (Exception e)
             {
